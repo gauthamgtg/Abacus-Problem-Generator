@@ -7,25 +7,29 @@ def generate_number(min_len, max_len):
     max_value = 10**max_len - 1
     return random.randint(min_value, max_value)
 
-# Function to generate a problem vertically
-def generate_problem(num_lines, min_len, max_len, operation):
+# Function to generate a problem with either single or mixed operators
+def generate_problem(num_lines, min_len, max_len, operations, mixed):
     numbers = [generate_number(min_len, max_len) for _ in range(num_lines)]
+    problem_str = str(numbers[0])
     
-    problem_str = "\n".join([f"{operation}{num}" if i > 0 else str(num) for i, num in enumerate(numbers)])
-    if operation == "+":
-        return problem_str, sum(numbers)
-    elif operation == "-":
-        return problem_str, numbers[0] - sum(numbers[1:])
-    elif operation == "*":
-        result = 1
-        for num in numbers:
-            result *= num
-        return problem_str, result
-    elif operation == "/":
-        result = numbers[0]
-        for num in numbers[1:]:
-            result /= num
-        return problem_str, result
+    result = numbers[0]
+    for i in range(1, num_lines):
+        operation = random.choice(operations) if mixed else operations[0]
+        
+        if operation == "+":
+            result += numbers[i]
+            problem_str += f"\n+{numbers[i]}"
+        elif operation == "-":
+            result -= numbers[i]
+            problem_str += f"\n-{numbers[i]}"
+        elif operation == "*":
+            result *= numbers[i]
+            problem_str += f"\n*{numbers[i]}"
+        elif operation == "/":
+            result /= numbers[i]
+            problem_str += f"\n/{numbers[i]}"
+    
+    return problem_str, result
 
 # Initializing session state for problems and answers
 if 'problems' not in st.session_state:
@@ -41,6 +45,7 @@ num_lines = st.number_input("Number of numbers in each problem (lines)", min_val
 min_len = st.number_input("Minimum number length", min_value=1, max_value=10, value=1)
 max_len = st.number_input("Maximum number length", min_value=1, max_value=10, value=2)
 operations_selected = st.multiselect("Operations to be performed", ["+", "-", "*", "/"], default=["+"])
+mixed_operators = st.radio("Do you want mixed operators in a single problem?", ("Single Operator", "Mixed Operators"))
 num_problems = st.number_input("Number of problems", min_value=1, max_value=100, value=5)
 
 # Generate problems
@@ -48,9 +53,10 @@ if st.button("Generate Problems"):
     st.session_state['problems'] = []
     st.session_state['correct_answers'] = []
     
+    mixed = mixed_operators == "Mixed Operators"
+    
     for _ in range(num_problems):
-        operation = random.choice(operations_selected)
-        problem_str, correct_answer = generate_problem(num_lines, min_len, max_len, operation)
+        problem_str, correct_answer = generate_problem(num_lines, min_len, max_len, operations_selected, mixed)
         st.session_state['problems'].append(problem_str)
         st.session_state['correct_answers'].append(correct_answer)
 
